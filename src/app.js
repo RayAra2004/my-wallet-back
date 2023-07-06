@@ -4,6 +4,8 @@ import cors from "cors";
 import { MongoClient } from "mongodb";
 import Joi from "joi";
 import bcrypt from "bcrypt";
+import { v4 as uuid } from 'uuid';
+
 
 dotenv.config();
 
@@ -30,6 +32,11 @@ const userSchema = Joi.object({
     password: Joi.string().min(3).required()
 })
 
+const loginSchema = Joi.object({
+    email: Joi.string().email().required(),
+    password: Joi.string().min(3).required()
+})
+
 app.post("/sign-up", async (req, res) => {
     const {name, email, password} = req.body;
 
@@ -50,6 +57,31 @@ app.post("/sign-up", async (req, res) => {
         res.status(500).send(err.message);
     }
     
+})
+
+app.post('/sign-in', async (req, res) =>{
+    const {email, password} = req.body;
+
+    const validation = loginSchema.validate({email, password});
+    if(validation.error) return res.sendStatus(422);
+
+    try{
+
+        const userExist = await db.collection('users').findOne({email});
+        if(!userExist) return res.sendStatus(404);
+        
+        const passwordCorret = bcrypt.compareSync(password, userExist.cryptPassword);
+        if(!passwordCorret) return res.sendStatus(401);
+        
+        const token = uuid();
+
+        await db.collection('sessions').insertOne({userId: userExist._id, token});
+
+        res.send(token);
+        
+    }catch(err){
+        res.status(500).send(err.message);
+    }
 })
 
 
