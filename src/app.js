@@ -37,6 +37,12 @@ const loginSchema = Joi.object({
     password: Joi.string().min(3).required()
 })
 
+const transactionSchema = Joi.object({
+    type: Joi.string().valid('entrada', 'saida').required(),
+    value: Joi.number().positive().required(),
+    description: Joi.string().required()
+})
+
 app.post("/sign-up", async (req, res) => {
     const {name, email, password} = req.body;
 
@@ -84,6 +90,32 @@ app.post('/sign-in', async (req, res) =>{
     }
 })
 
+app.post('/transaction/:type', async (req, res) =>{
+    const {type} = req.params;
+    const {value, description} = req.body;
+    const { authorization } = req.headers;
+    const token = authorization?.replace('Bearer ', '');
+
+    if(!token) return res.sendStatus(401);
+
+    const validation = transactionSchema.validate({type, value, description});
+
+    if(validation.error) return res.sendStatus(422);
+
+    try{
+        const user = await db.collection('sessions').findOne({token});
+
+        if(!user) return res.sendStatus(404);
+
+        await db.collection('transactions').insertOne({id_user: user._id, description, value, type})
+
+        res.sendStatus(200);
+
+    }catch(err){
+        res.status(500).send(err.message)
+    }
+})
+
 app.get('/transactions', async (req, res) => {
     const { authorization } = req.headers;
     const token = authorization?.replace('Bearer ', '');
@@ -93,8 +125,8 @@ app.get('/transactions', async (req, res) => {
     const user = await db.collection('sessions').findOne({token});
 
     if(!user) return res.sendStatus(404);
-
-    const transactions = await db.collection('transactions').find({_id: user._id}).toArray();
+    
+    const transactions = await db.collection('transactions').find({id_user: user._id}).toArray();
 
     res.send(transactions);
 
