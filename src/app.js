@@ -69,7 +69,7 @@ app.post('/sign-in', async (req, res) =>{
 
         const userExist = await db.collection('users').findOne({email});
         if(!userExist) return res.sendStatus(404);
-        
+
         const passwordCorret = bcrypt.compareSync(password, userExist.cryptPassword);
         if(!passwordCorret) return res.sendStatus(401);
         
@@ -77,7 +77,7 @@ app.post('/sign-in', async (req, res) =>{
 
         await db.collection('sessions').insertOne({userId: userExist._id, token});
 
-        res.send(token);
+        res.send({token, id: userExist._id});
         
     }catch(err){
         res.status(500).send(err.message);
