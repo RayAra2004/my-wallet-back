@@ -84,6 +84,21 @@ app.post('/sign-in', async (req, res) =>{
     }
 })
 
+app.get('/transactions', async (req, res) => {
+    const { authorization } = req.headers;
+    const token = authorization?.replace('Bearer ', '');
+
+    if(!token) return res.sendStatus(401);
+
+    const user = await db.collection('sessions').findOne({token});
+
+    if(!user) return res.sendStatus(404);
+
+    const transactions = await db.collection('transactions').find({_id: user._id}).toArray();
+
+    res.send(transactions);
+
+})
 
 
 app.listen(PORT, ()=> console.log(`Server running on port ${PORT}`));
