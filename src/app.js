@@ -5,6 +5,7 @@ import { MongoClient } from "mongodb";
 import Joi from "joi";
 import bcrypt from "bcrypt";
 import { v4 as uuid } from 'uuid';
+import dayjs from "dayjs";
 
 
 dotenv.config();
@@ -81,6 +82,8 @@ app.post('/sign-in', async (req, res) =>{
         
         const token = uuid();
 
+        await db.collection('sessions').deleteMany({userId: userExist._id});
+
         await db.collection('sessions').insertOne({userId: userExist._id, token});
 
         res.send({token, id: userExist._id});
@@ -100,14 +103,14 @@ app.post('/transaction/:type', async (req, res) =>{
 
     const validation = transactionSchema.validate({type, value, description});
 
-    if(validation.error) return res.sendStatus(422);
+    if(validation.error) return res.status(422).send(validation.error.details);
 
     try{
         const user = await db.collection('sessions').findOne({token});
 
         if(!user) return res.sendStatus(404);
 
-        await db.collection('transactions').insertOne({id_user: user._id, description, value, type})
+        await db.collection('transactions').insertOne({id_user: user._id, description, value, type, date: dayjs().format("DD/MM")})
 
         res.sendStatus(200);
 
