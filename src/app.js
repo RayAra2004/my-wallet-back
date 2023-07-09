@@ -110,7 +110,7 @@ app.post('/transaction/:type', async (req, res) =>{
 
         if(!user) return res.sendStatus(404);
 
-        await db.collection('transactions').insertOne({id_user: user._id, description, value, type, date: dayjs().format("DD/MM")})
+        await db.collection('transactions').insertOne({id_user: user.userId, description, value, type, date: dayjs().format("DD/MM")})
 
         res.sendStatus(200);
 
@@ -129,9 +129,11 @@ app.get('/transactions', async (req, res) => {
 
     if(!user) return res.sendStatus(404);
     
-    const transactions = await db.collection('transactions').find({id_user: user._id}).toArray();
+    const transactions = (await db.collection('transactions').find({id_user: user.userId}).toArray()).reverse();
 
-    res.send(transactions);
+    const userN = await db.collection('users').findOne({_id: user.userId});
+
+    res.send({name: userN.name, transactions});
 
 })
 
