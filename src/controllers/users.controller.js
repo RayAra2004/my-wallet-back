@@ -1,4 +1,4 @@
-import { db } from "../app.js";
+import { db } from "../database/database.connection.js";
 import bcrypt from "bcrypt";
 import Joi from "joi";
 import { v4 as uuid } from 'uuid';
