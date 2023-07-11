@@ -11,20 +11,13 @@ const transactionSchema = Joi.object({
 export async function transaction(req, res){
     const {type} = req.params;
     const {value, description} = req.body;
-    const { authorization } = req.headers;
-    const token = authorization?.replace('Bearer ', '');
-
-    if(!token) return res.sendStatus(401);
+    const { user } = res.locals;
 
     const validation = transactionSchema.validate({type, value, description});
 
     if(validation.error) return res.status(422).send(validation.error.details);
 
     try{
-        const user = await db.collection('sessions').findOne({token});
-
-        if(!user) return res.sendStatus(404);
-
         await db.collection('transactions').insertOne({id_user: user.userId, description, value, type, date: dayjs().format("DD/MM")})
 
         res.sendStatus(200);
@@ -35,14 +28,7 @@ export async function transaction(req, res){
 }
 
 export async function transactions(req, res) {
-    const { authorization } = req.headers;
-    const token = authorization?.replace('Bearer ', '');
-
-    if(!token) return res.sendStatus(401);
-
-    const user = await db.collection('sessions').findOne({token});
-
-    if(!user) return res.sendStatus(404);
+   const { user } = res.locals;
     
     const transactions = (await db.collection('transactions').find({id_user: user.userId}).toArray()).reverse();
 
