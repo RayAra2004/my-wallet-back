@@ -1,24 +1,9 @@
 import { db } from "../database/database.connection.js";
 import bcrypt from "bcrypt";
-import Joi from "joi";
 import { v4 as uuid } from 'uuid';
-
-const userSchema = Joi.object({
-    name: Joi.string().required(),
-    email: Joi.string().email().required(),
-    password: Joi.string().min(3).required()
-})
-
-const loginSchema = Joi.object({
-    email: Joi.string().email().required(),
-    password: Joi.string().min(3).required()
-})
 
 export async function signUp(req, res){
     const {name, email, password} = req.body;
-
-    const validation = userSchema.validate({ name, email, password});
-    if(validation.error) return res.sendStatus(422);
     
     try{
         const userExist = await db.collection('users').findOne({email});
@@ -37,11 +22,7 @@ export async function signUp(req, res){
 }
 
 export async function signIn(req, res){
-
     const {email, password} = req.body;
-
-    const validation = loginSchema.validate({email, password});
-    if(validation.error) return res.sendStatus(422);
 
     try{
 
